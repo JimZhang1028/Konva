@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://unpkg.com/konva@4.2.2/konva.min.js"></script>
+    <meta charset="utf-8" />
+    <title>Konva mask Demo</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+
+    <script>
+      var width = window.innerWidth;
+      var height = window.innerHeight;
+
+      var stage = new Konva.Stage({
+        container: 'container',
+        width: width,
+        height: height,
+		zindex:'1',
+      });
+
+      var layer = new Konva.Layer(
+	  );
+	  
+	  var group = new Konva.Group({
+	    x:0,
+		y:0,
+		id:'3333',
+	  });
+
+      var mask = new Konva.Rect({
+        x:0,
+		y:0,
+        width: width,
+        height: height,
+		fill:'black',
+		opacity:0.2,
+		name: 'basic',
+		zindex:'1000',
+		stroke:'red',
+      });
+	  
+	   var complexText = new Konva.Text({
+        x: width/2 - 300,
+        y: 5,
+        text:
+          "Click and Drag to Select the area you want",
+        fontSize: 18,
+        fontFamily: 'Calibri',
+        fill: '#555',
+        width: 600,
+        padding: 20,
+        align: 'center'
+      });
+	  
+      stage.add(layer);
+	  group.add(mask)
+	  group.add(complexText);
+	  layer.add(group)
+	  layer.draw();
+
+	  
+	  group.on('mousedown', function (e) {
+		let mousePos = stage.getPointerPosition();
+		console.log('mousedown',mousePos)
+
+		let Existarea = layer.findOne('#222');
+		let Existarea2 = layer.findOne('#111111');
+		if (!Existarea && !Existarea2) {
+			  var area = new Konva.Rect({
+				x:mousePos.x,
+				y:mousePos.y,
+				width:1,
+				height:1,
+				name: 'basic',
+				zindex:'1001',
+				opacity:0.3,
+				fill:'blue',
+				id:'111111'
+				//draggable: true,
+			  });
+			layer.add(area);
+			layer.draw();
+			console.log(layer);
+		}
+	});
+
+	group.on('mousemove', function (e) {
+		let mousePos = stage.getPointerPosition();
+			document.body.style.cursor = 'crosshair';	  
+		//console.log('mousemove',mousePos)
+		let area = layer.findOne('#111111');
+		if(area) {
+					area.width(mousePos.x-area.x());
+					area.height(mousePos.y-area.y());
+					layer.batchDraw();
+			
+		}
+
+	 });
+	group.on('mouseup', function (e) {
+		let mousePos = stage.getPointerPosition();
+		console.log('mouseup',mousePos)
+		let area = layer.findOne('#111111');
+		if(area) {
+			area.width(mousePos.x-area.x());
+			area.height(mousePos.y-area.y());
+			if(area.width() <10 || area.height() < 10) {
+				area.destroy();
+			} else {
+				layer.batchDraw();
+					var tr = new Konva.Transformer(
+				{
+					rotateEnabled:false,
+					keepRatio: false,
+					ignoreStroke: true,
+				}
+			);
+			layer.add(tr);
+
+			tr.attachTo(area);
+			area.draggable(true);
+			area.id('222');
+			layer.findOne('#3333').destroy();
+			layer.batchDraw();
+			document.body.style.cursor = 'default';
+			}
+
+		}
+
+	  });
+
+
+	  
+	  
+	  
+    </script>
+  </body>
+</html>

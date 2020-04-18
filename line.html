@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://unpkg.com/konva@4.2.2/konva.min.js"></script>
+    <meta charset="utf-8" />
+    <title>Konva Simple Line Demo</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #f0f0f0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <script>
+      var width = window.innerWidth;
+      var height = window.innerHeight;
+
+      var stage = new Konva.Stage({
+        container: 'container',
+        width: width,
+        height: height,
+      });
+
+      var layer = new Konva.Layer();
+
+	  var dragPoints = [
+		{ 
+		  id:'target_0',
+		  x: 300,
+		  y: 500
+		},
+		{ 
+		  id:'target_1',
+		  x: 375,
+		  y: 500
+		},
+	  ];
+	  var redLineGroup = new Konva.Group({
+	  		draggable: true
+		})
+      var redLine = new Konva.Line({
+        points: [300, 500,
+		375,500],
+        stroke: 'red',
+        strokeWidth: 4,
+        lineCap: 'round',
+        lineJoin: 'round',
+
+		name: 'basic',
+		zindex:'0'
+      });
+	  
+	  redLineGroup.add(redLine);
+      layer.add(redLineGroup);
+	  
+		for (const dragPoint of dragPoints) {
+			CreatedragPoints(dragPoint.id,dragPoint.x,dragPoint.y)
+		}
+
+      // add the layer to the stage
+      stage.add(layer);
+	  layer.draw();
+	  
+	  
+	  function CreatedragPoints(id, x, y, radius=2, fill='red' ) {
+		const circle = new Konva.Circle({
+			id: id,
+			x:x,
+			y:y,
+			fill: fill,
+			radius: radius,
+			draggable: true,
+			zindex:'1',
+
+		  });
+		 redLineGroup.add(circle);
+		 layer.batchDraw();
+		 
+		circle.on("dragmove", e => {
+			console.log('circle move')
+			for (const dragPoint of dragPoints) {
+				if (dragPoint.id === circle.id()) {
+					dragPoint.x = Math.round(circle.x());
+					dragPoint.y = Math.round(circle.y());
+				}
+			}
+			updateObjects(e);
+		});
+		
+		circle.on("dragend", e => {
+			//updateObjects();
+			recoverStyle(e);
+		});
+		
+		circle.on("dblclick", e => {
+			//updateObjects();
+			console.log('circle dblclick')
+			circle.destroy();
+			layer.batchDraw();
+			clearPoint(e,circle.id());
+			
+		});
+	  }
+	  
+	  redLineGroup.on("dragmove", e => {
+			console.log('redLineGroup move start')
+			console.log('redLineGroup move end')
+	  });
+	  
+	  redLine.on("dragmove", e => {
+			console.log('redLine move start')
+			console.log('redLine move end')
+	  });
+		
+	  redLineGroup.on('click', function(e) {
+		updateStye(e);
+      });
+	  
+	  
+	  redLineGroup.on('dblclick', function(e) {
+		creatNewPoint(e);
+      });
+	  
+	  function clearPoint(e,id) {
+		dragPoints.forEach((dragPoint,index)=>{
+			if(dragPoint.id === id) {
+				dragPoints.splice(index, 1);
+			}
+		})
+		updateObjects(e);
+	  }
+	  
+	  function creatNewPoint(e){
+		if (dragPoints.length === 2) {
+			let point = {}
+		    if  (dragPoints[0].x === dragPoints[1].x){
+				point = {
+					id:'target_' + dragPoints.length,
+					x: dragPoints[0].x,
+					y: dragPoints[0].y + Math.abs((dragPoints[1].y-dragPoints[0].y)/2)
+				}
+			} else if  (dragPoints[0].y === dragPoints[1].y){
+				point = {
+					id:'target_' + dragPoints.length,
+					x: dragPoints[0].x + Math.abs((dragPoints[1].x-dragPoints[0].x)/2),
+					y: dragPoints[0].y
+				}
+			} else {
+				point = {
+					id:'target_' + dragPoints.length,
+					x: (dragPoints[1].x >dragPoints[0].x) ? (dragPoints[0].x + Math.abs((dragPoints[1].x-dragPoints[0].x)/2)) : (dragPoints[1].x + Math.abs((dragPoints[1].x-dragPoints[0].x)/2)),
+					y: (dragPoints[1].y >dragPoints[0].y) ? (dragPoints[0].y + Math.abs((dragPoints[1].y-dragPoints[0].y)/2)) : (dragPoints[1].y + Math.abs((dragPoints[1].y-dragPoints[0].y)/2)),
+				}
+			}
+			dragPoints.splice(1, 0, point);
+			CreatedragPoints(point.id,point.x,point.y,6,'yellow')	
+		} else {
+			var evt = e.evt;
+			let x=evt.clientX;
+			let y=evt.clientY;
+			let fromIndex;
+			dragPoints.forEach((dragPoint,index)=>{
+				if(index !== dragPoints.length - 1) {
+					if (((dragPoint.x <= x && dragPoints[index+1].x >= x ) && (dragPoint.y <= y && dragPoints[index+1].y >= y )) ||
+						((dragPoint.x <= x && dragPoints[index+1].x >= x ) && (dragPoint.y >= y && dragPoints[index+1].y <= y )) ||
+						((dragPoint.x >= x && dragPoints[index+1].x <= x ) && (dragPoint.y <= y && dragPoints[index+1].y >= y )) ||
+						((dragPoint.x >= x && dragPoints[index+1].x <= x ) && (dragPoint.y >= y && dragPoints[index+1].y <= y ))
+					){
+						fromIndex = index
+					}
+				
+				}
+			})
+			
+			point = {
+				id:'target_' + dragPoints.length,
+				x: (dragPoints[fromIndex+1].x > dragPoints[fromIndex].x) ? (dragPoints[fromIndex].x + Math.abs((dragPoints[fromIndex+1].x-dragPoints[fromIndex].x)/2)) : (dragPoints[fromIndex+1].x + Math.abs((dragPoints[fromIndex+1].x-dragPoints[fromIndex].x)/2)),
+				y: (dragPoints[fromIndex+1].y > dragPoints[fromIndex].y) ? (dragPoints[fromIndex].y + Math.abs((dragPoints[fromIndex+1].y-dragPoints[fromIndex].y)/2)) : (dragPoints[fromIndex+1].y + Math.abs((dragPoints[fromIndex+1].y-dragPoints[fromIndex].y)/2)),
+			}
+			
+			dragPoints.splice(fromIndex+1, 0, point);
+			CreatedragPoints(point.id,point.x,point.y,6,'yellow')	
+		}
+		console.log(dragPoints);
+	  }
+	  
+	  function updateObjects(e){
+		let points = [];
+		for (const dragPoint of dragPoints) {
+			points.push(dragPoint.x);
+			points.push(dragPoint.y);
+		}
+		console.log(points)
+		redLine.points(points);
+		layer.batchDraw();
+	  
+	  }
+	  
+	  
+	  function updateStye(e){
+		redLine.stroke('green');
+		redLine.dash([10, 5]);
+		for (const dragPoint of dragPoints) {
+			var target = layer.findOne("#" + dragPoint.id);
+			target.fill('yellow');
+			target.radius(6);
+		}
+		layer.batchDraw();
+	  }
+	  
+	  function recoverStyle(e) {
+		redLine.stroke('red');
+		redLine.dash([0, 0]);
+		for (const dragPoint of dragPoints) {
+			var target = layer.findOne("#" + dragPoint.id);
+			target.fill('red');
+			target.radius(2);
+		}
+		layer.batchDraw();
+	  }
+	  
+	  
+    </script>
+  </body>
+</html>
